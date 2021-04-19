@@ -1,0 +1,56 @@
+ hosts: all
+  tasks:
+    - name: Creation of directory to be mounted
+    file:
+      state: directory
+      path: "{{ mount_directory }}"
+  - name: Mounting directory created to CDROM
+    mount:
+      src: "/dev/cdrom"
+      path: "{{ mount_directory }}"
+      state: mounted
+      fstype: "iso9660"
+  - name: YUM Repository - AppStream
+    yum_repository:
+      baseurl: "{{ mount_directory }}/AppStream"
+      name: "DVD1"
+      description: "YUM Repository - AppStream"
+      gpgcheck: no
+  - name: YUM Repository - BaseOS
+    yum_repository:
+      baseurl: "{{ mount_directory }}/BaseOS"
+
+   - name: Docker Configuration
+    yum_repository:
+     name: "docker"
+     description: "Docker Package"
+     baseurl: httpd://download.docker.com/linux/centos/7/x86_64/stable/
+     gpgcheck: no
+
+  - name: Installing Docker
+    package:
+     name: "docker-ce-18.06.3.ce-3.e17.x86_64"
+     state: present
+
+  - name:
+    service:
+      name: "docker"
+      state: started
+      enabled: yes
+      
+  - name: HTTPD installation
+    package:
+      name: "httpd"
+      state: present
+    when: ansible_distribution == "Redhat"
+
+  - name: web page setup
+    template:
+      dest: "/var/www/html"
+      src: "/web/index.html"
+
+  - name: starting HTTPD service
+    service:
+      name: "httpd"
+      state: started
+      enabled: yes
